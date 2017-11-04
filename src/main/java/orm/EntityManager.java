@@ -3,6 +3,7 @@ package orm;
 import annotations.Column;
 import annotations.Entity;
 import annotations.Id;
+import strategies.SchemaInitializationStrategy;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -12,9 +13,14 @@ import java.util.Date;
 
 public class EntityManager<E> implements DbContext<E> {
     private Connection connection;
+    private String dataSource;
+    private SchemaInitializationStrategy strategy;
 
-    public EntityManager(Connection connection) {
+    public EntityManager(Connection connection, String dataSource, SchemaInitializationStrategy strategy) {
         this.connection = connection;
+        this.dataSource = dataSource;
+        this.strategy = strategy;
+        this.strategy.execute();
     }
 
     public boolean persist(E entity) throws IllegalAccessException, SQLException, InstantiationException {
@@ -22,6 +28,7 @@ public class EntityManager<E> implements DbContext<E> {
         primary.setAccessible(true);
         Object value = primary.get(entity);
 
+        //TODO: Update db when needed
         if (value == null || (int) value <= 0) {
             return this.doInsert(entity, primary);
         }
@@ -87,10 +94,10 @@ public class EntityManager<E> implements DbContext<E> {
                 );
     }
 
-    private void doCreate(Class entity) throws SQLException {
-        String tableName = this.getTableName(entity);
+    private void doCreate(E entity) throws SQLException {
+        String tableName = this.getTableName(entity.getClass());
         String query = "CREATE TABLE " + tableName + "(";
-        Field[] fields = entity.getDeclaredFields();
+        Field[] fields = entity.getClass().getDeclaredFields();
 
         List<String> columns = new ArrayList<>();
         for (Field field : fields) {
@@ -129,29 +136,25 @@ public class EntityManager<E> implements DbContext<E> {
         connection.prepareStatement(query).execute();
     }
 
-    private boolean doDelete(Class table, String where) throws SQLException,
-            IllegalAccessException, InstantiationException {
-        String query = "DELETE FROM " + this.getTableName(table)
+    private boolean doDelete(Class<?> table, String where) throws Exception {
+        String tableName = this.getTableName(table);
+
+        if(!this.checkIfTableExists(tableName)){
+            throw new Exception("Table does not exist.");
+        }
+        String query = "DELETE FROM " + tableName
                 + " WHERE 1" + (where != null ? " AND " + where : "") + ";";
         return connection.prepareStatement(query).execute();
-    }
-
-    private boolean checkIfFieldExistInDB(Class entity, Field field) throws SQLException {
-        String fieldName = field.getAnnotation(Column.class).name();
-        String tableName = this.getTableName(entity);
-
-        String query = "SELECT * " +
-                "FROM information_schema.COLUMNS " +
-                "WHERE TABLE_SCHEMA = 'orm_db' " +
-                "AND TABLE_NAME = '" + tableName + "' " +
-                "AND COLUMN_NAME = '" + fieldName + "'";
-
-        return  connection.prepareStatement(query).executeQuery().next();
     }
 
     private boolean doInsert(E entity, Field primary) throws SQLException,
             IllegalAccessException, InstantiationException {
         String tableName = this.getTableName(entity.getClass());
+
+        if(!this.checkIfTableExists(tableName)){
+            doCreate(entity);
+        }
+
         String query = "INSERT INTO " + tableName + " (";
         Field[] fields = entity.getClass().getDeclaredFields();
 
@@ -178,7 +181,7 @@ public class EntityManager<E> implements DbContext<E> {
         query += ") VALUES(";
         query += String.join(", ", values);
         query += ");";
-        //TODO set id to the entity
+        //TODO: set id to the entity
         return connection.prepareStatement(query).execute();
     }
 
@@ -219,6 +222,34 @@ public class EntityManager<E> implements DbContext<E> {
             return entityClass.getAnnotation(Entity.class).name();
         }
         throw new UnsupportedOperationException("Entity does not exist.");
+    }
+
+    private boolean checkIfFieldExistInDB(Class entity, Field field) throws SQLException {
+        String fieldName = field.getAnnotation(Column.class).name();
+        String tableName = this.getTableName(entity);
+
+        String query = "SELECT * " +
+                "FROM information_schema.COLUMNS " +
+                "WHERE TABLE_SCHEMA = 'orm_db' " +
+                "AND TABLE_NAME = '" + tableName + "' " +
+                "AND COLUMN_NAME = '" + fieldName + "'";
+
+        return  connection.prepareStatement(query).executeQuery().next();
+    }
+
+    private boolean checkIfTableExists(String tableName) throws SQLException {
+        String query = "SELECT table_name " +
+                "FROM information_schema.TABLES " +
+                "WHERE TABLE_SCHEMA = 'orm_db' " +
+                "AND TABLE_NAME = '" + tableName + "' " +
+                "LIMIT 1;";
+
+        ResultSet rs = this.connection.prepareStatement(query).executeQuery();
+
+        if(!rs.first()){
+            return false;
+        }
+        return true;
     }
 
     private void fillEntity(Class<E> table, ResultSet rs, E entity) throws SQLException, IllegalAccessException {
