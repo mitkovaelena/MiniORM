@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 public class EntityManagerBuilder {
     private Connection connection;
-    private String dataSource;  //database name
+    private String dataSource;     //database name
     private SchemaInitializationStrategy strategy;
 
 
@@ -20,7 +20,9 @@ public class EntityManagerBuilder {
         return new StrategyConfigurer(this);
     }
 
-    public EntityManager build() throws SQLException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    public EntityManager build() throws SQLException, ClassNotFoundException,
+            NoSuchMethodException, InstantiationException,
+            IllegalAccessException, InvocationTargetException {
      return new EntityManager(this.connection, this.dataSource, this.strategy);
     }
 
@@ -39,10 +41,6 @@ public class EntityManagerBuilder {
     public EntityManagerBuilder setDataSource(String dataSource) {
         this.dataSource = dataSource;
         return this;
-    }
-
-    public SchemaInitializationStrategy getStrategy() {
-        return strategy;
     }
 
     public void setStrategy(SchemaInitializationStrategy strategy) {

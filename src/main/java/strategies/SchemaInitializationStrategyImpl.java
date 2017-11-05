@@ -13,14 +13,20 @@ public abstract class SchemaInitializationStrategyImpl implements SchemaInitiali
     Connection connection;
     String dataSource;
 
-    public SchemaInitializationStrategyImpl(EntityScanner entityScanner, TableCreator creator, Connection connection, String dataSource) {
+    public SchemaInitializationStrategyImpl(EntityScanner entityScanner,
+                                            TableCreator creator,
+                                            Connection connection,
+                                            String dataSource) {
         this.entityScanner = entityScanner;
         this.creator = creator;
         this.connection = connection;
         this.dataSource = dataSource;
     }
 
-   List<Class> scanForEntities() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+   List<Class> scanForEntities() throws ClassNotFoundException,
+           NoSuchMethodException, InvocationTargetException,
+           InstantiationException, IllegalAccessException {
+
         return this.entityScanner
                 .getAllEntities(System.getProperty("user.dir"));
    }

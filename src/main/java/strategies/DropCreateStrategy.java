@@ -13,12 +13,17 @@ public class DropCreateStrategy extends SchemaInitializationStrategyImpl {
     private final String DROP_DATABASE_QUERY = "DROP DATABASE IF EXISTS `%s`;";
     private final String CREATE_DATABASE_QUERY = "CREATE DATABASE `%s`;";
 
-    public DropCreateStrategy(EntityScanner entityScanner, TableCreator creator, Connection connection, String dataSource) {
+    public DropCreateStrategy(EntityScanner entityScanner,
+                              TableCreator creator,
+                              Connection connection,
+                              String dataSource) {
         super(entityScanner, creator, connection, dataSource);
     }
 
     @Override
-    public void execute() throws SQLException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    public void execute() throws SQLException, ClassNotFoundException,
+            NoSuchMethodException, InstantiationException,
+            IllegalAccessException, InvocationTargetException {
         String dropQuery = String.format(DROP_DATABASE_QUERY, dataSource);
         this.connection.prepareStatement(dropQuery).executeUpdate();
 
