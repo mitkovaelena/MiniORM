@@ -1,7 +1,7 @@
 package orm;
 
 import scanner.EntityScanner;
-import strategies.tableManipulator.TableCreatorImpl;
+import strategies.tableCreator.TableCreatorImpl;
 import strategies.SchemaInitializationStrategy;
 
 import java.lang.reflect.Constructor;

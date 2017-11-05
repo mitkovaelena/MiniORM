@@ -1,4 +1,4 @@
-package strategies.tableManipulator;
+package strategies.tableCreator;
 
 import annotations.Column;
 import annotations.Entity;
@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TableCreatorImpl implements TableCreator {
+    private final String CREATE_TABLE_QUERY = "CREATE TABLE IF NOT EXISTS `%s`(%s)";
+
     private Connection connection;
     private String dataSource;
 
@@ -22,7 +24,6 @@ public class TableCreatorImpl implements TableCreator {
     @Override
     public void doCreate(Class entity) throws SQLException {
         String tableName = this.getTableName(entity);
-        String query = "CREATE TABLE IF NOT EXISTS " + this.dataSource + "." + tableName + "(";
         Field[] fields = entity.getDeclaredFields();
 
         List<String> columns = new ArrayList<>();
@@ -39,8 +40,10 @@ public class TableCreatorImpl implements TableCreator {
                 columns.add(column);
             }
         }
+        String query = String.format(CREATE_TABLE_QUERY,
+                this.dataSource + "." + tableName,
+                String.join(", ", columns));
 
-        query += String.join(", ", columns) + ");";
         connection.prepareStatement(query).execute();
     }
 

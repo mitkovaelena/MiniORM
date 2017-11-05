@@ -13,6 +13,11 @@ import java.util.*;
 import java.util.Date;
 
 public class EntityManager<E> implements DbContext<E> {
+    private final String INSERT_QUERY = "INSERT INTO %s(%s) VALUES(%s);";
+    private final String UPDATE_QUERY = "UPDATE %s SET %s WHERE %s;";
+    private final String DELETE_QUERY = "DELETE FROM %s  WHERE 1 %s LIMIT 1;";
+    private final String SELECT_QUERY = "SELECT * FROM %s WHERE 1 %s %s;";
+
     private Connection connection;
     private String dataSource;
     private SchemaInitializationStrategy strategy;
@@ -29,7 +34,6 @@ public class EntityManager<E> implements DbContext<E> {
         primary.setAccessible(true);
         Object value = primary.get(entity);
 
-        //TODO: Update db when needed
         if (value == null || (int) value <= 0) {
             return this.doInsert(entity, primary);
         }
@@ -37,7 +41,7 @@ public class EntityManager<E> implements DbContext<E> {
     }
 
     public Iterable<E> find(Class<E> table) throws SQLException, IllegalAccessException, InstantiationException {
-        String query = "SELECT * FROM " + this.getTableName(table) + ";";
+        String query = String.format(SELECT_QUERY, this.getTableName(table), "", "");
         ResultSet rs = connection.prepareStatement(query).executeQuery();
 
         List<E> entities = new ArrayList<>();
@@ -51,8 +55,8 @@ public class EntityManager<E> implements DbContext<E> {
 
     public Iterable<E> find(Class<E> table, String where) throws SQLException,
             IllegalAccessException, InstantiationException {
-        String query = "SELECT * FROM " + this.getTableName(table)
-                + " WHERE 1" + (where != null ? " AND " + where : "") + ";";
+        String query = String.format(SELECT_QUERY,
+                this.getTableName(table), (where != null ? " AND " + where : ""), "");
         ResultSet rs = connection.prepareStatement(query).executeQuery();
 
         List<E> entities = new ArrayList<>();
@@ -65,7 +69,7 @@ public class EntityManager<E> implements DbContext<E> {
     }
 
     public E findFirst(Class<E> table) throws SQLException, IllegalAccessException, InstantiationException {
-        String query = "SELECT * FROM " + this.getTableName(table) + " LIMIT 1;";
+        String query = String.format(SELECT_QUERY, this.getTableName(table), "", "");
         ResultSet rs = connection.prepareStatement(query).executeQuery();
         E entity = table.newInstance();
         if (rs.next()) {
@@ -76,8 +80,8 @@ public class EntityManager<E> implements DbContext<E> {
 
     public E findFirst(Class<E> table, String where) throws SQLException,
             IllegalAccessException, InstantiationException {
-        String query = "SELECT * FROM " + this.getTableName(table)
-                + " WHERE 1" + (where != null ? " AND " + where : "") + " LIMIT 1;";
+        String query = String.format(SELECT_QUERY,
+                this.getTableName(table), (where != null ? " AND " + where : ""), "LIMIT 1");
         ResultSet rs = connection.prepareStatement(query).executeQuery();
         E entity = table.newInstance();
         if (rs.next()) {
@@ -95,27 +99,11 @@ public class EntityManager<E> implements DbContext<E> {
                 );
     }
 
-
-    private boolean doDelete(Class<?> table, String where) throws Exception {
-        String tableName = this.getTableName(table);
-
-        if(!this.checkIfTableExists(tableName)){
-            throw new Exception("Table does not exist.");
-        }
-        String query = "DELETE FROM " + tableName
-                + " WHERE 1" + (where != null ? " AND " + where : "") + ";";
-        return connection.prepareStatement(query).execute();
-    }
-
     private boolean doInsert(E entity, Field primary) throws SQLException,
             IllegalAccessException, InstantiationException {
         String tableName = this.getTableName(entity.getClass());
 
-        if(!this.checkIfTableExists(tableName)){
-           // doCreate(entity);
-        }
 
-        String query = "INSERT INTO " + tableName + " (";
         Field[] fields = entity.getClass().getDeclaredFields();
 
         List<String> columns = new ArrayList<>();
@@ -124,11 +112,6 @@ public class EntityManager<E> implements DbContext<E> {
             field.setAccessible(true);
             if (!field.getName().equals(primary.getName()) && field.isAnnotationPresent(Column.class)) {
                 columns.add("`" + field.getAnnotation(Column.class).name() + "`");
-
-
-                if(!this.checkIfFieldExist(tableName, field)){
-                    // doAlter(entity);
-                }
 
                 Object value = field.get(entity);
                 if (field.getType() == Date.class) {
@@ -142,25 +125,25 @@ public class EntityManager<E> implements DbContext<E> {
             }
         }
 
-        query += String.join(", ", columns);
-        query += ") VALUES(";
-        query += String.join(", ", values);
-        query += ");";
+        String query = String.format(
+                INSERT_QUERY, tableName,
+                String.join(", ", columns),
+                String.join(", ", values));
+
         //TODO: set id to the entity
         return connection.prepareStatement(query).execute();
     }
 
     private boolean doUpdate(E entity, Field primary) throws SQLException, IllegalAccessException {
         String tableName = this.getTableName(entity.getClass());
-        String query = "UPDATE " + tableName + " SET ";
         Field[] fields = entity.getClass().getDeclaredFields();
-        String where = " WHERE ";
+        String where = "";
 
         List<String> values = new ArrayList<>();
         for (Field field : fields) {
             field.setAccessible(true);
             if (field.getName().equals(primary.getName())) {
-                where += field.getName() + " = " + field.get(entity).toString() + " ;";
+                where += field.getName() + " = " + field.get(entity).toString();
             } else if (field.isAnnotationPresent(Column.class)) {
                 String str = "`" + field.getAnnotation(Column.class).name() + "` = ";
 
@@ -176,9 +159,15 @@ public class EntityManager<E> implements DbContext<E> {
                 values.add(str);
             }
         }
+        String query = String.format(UPDATE_QUERY, tableName, String.join(", ", values), where);
+        return connection.prepareStatement(query).execute();
+    }
 
-        query += String.join(", ", values);
-        query += where;
+    private boolean doDelete(Class<?> table, String where) throws Exception {
+        String tableName = this.getTableName(table);
+
+        String query = String.format(DELETE_QUERY,
+                tableName, (where != null ? " AND " + where : ""));
         return connection.prepareStatement(query).execute();
     }
 
@@ -187,33 +176,6 @@ public class EntityManager<E> implements DbContext<E> {
             return entityClass.getAnnotation(Entity.class).name();
         }
         throw new UnsupportedOperationException("Entity does not exist.");
-    }
-
-    private boolean checkIfFieldExist(String tableName, Field field) throws SQLException {
-        String fieldName = field.getAnnotation(Column.class).name();
-
-        String query = "SELECT * " +
-                "FROM information_schema.COLUMNS " +
-                "WHERE TABLE_SCHEMA = 'orm_db' " +
-                "AND TABLE_NAME = '" + tableName + "' " +
-                "AND COLUMN_NAME = '" + fieldName + "'";
-
-        return  connection.prepareStatement(query).executeQuery().next();
-    }
-
-    private boolean checkIfTableExists(String tableName) throws SQLException {
-        String query = "SELECT table_name " +
-                "FROM information_schema.TABLES " +
-                "WHERE TABLE_SCHEMA = 'orm_db' " +
-                "AND TABLE_NAME = '" + tableName + "' " +
-                "LIMIT 1;";
-
-        ResultSet rs = this.connection.prepareStatement(query).executeQuery();
-
-        if(!rs.first()){
-            return false;
-        }
-        return true;
     }
 
     private void fillEntity(Class<E> table, ResultSet rs, E entity) throws SQLException, IllegalAccessException {

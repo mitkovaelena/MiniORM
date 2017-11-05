@@ -1,7 +1,7 @@
 package strategies;
 
 import scanner.EntityScanner;
-import strategies.tableManipulator.TableCreator;
+import strategies.tableCreator.TableCreator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class DropCreateStrategy extends SchemaInitializationStrategyImpl {
+    //Creates new DB from the entities
     private final String DROP_DATABASE_QUERY = "DROP DATABASE IF EXISTS `%s`;";
     private final String CREATE_DATABASE_QUERY = "CREATE DATABASE `%s`;";
 

@@ -1,7 +1,7 @@
 package strategies;
 
 import scanner.EntityScanner;
-import strategies.tableManipulator.TableCreator;
+import strategies.tableCreator.TableCreator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
