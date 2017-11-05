@@ -40,7 +40,8 @@ public class EntityManager<E> implements DbContext<E> {
         return this.doUpdate(entity, primary);
     }
 
-    public Iterable<E> find(Class<E> table) throws SQLException, IllegalAccessException, InstantiationException {
+    public Iterable<E> find(Class<E> table) throws SQLException,
+            IllegalAccessException, InstantiationException {
         String query = String.format(SELECT_QUERY, this.getTableName(table), "", "");
         ResultSet rs = connection.prepareStatement(query).executeQuery();
 
@@ -130,8 +131,13 @@ public class EntityManager<E> implements DbContext<E> {
                 String.join(", ", columns),
                 String.join(", ", values));
 
-        //TODO: set id to the entity
-        return connection.prepareStatement(query).execute();
+        boolean result = connection.prepareStatement(query).execute();
+        String q = "SELECT LAST_INSERT_ID() AS id;";
+        ResultSet rs = connection.prepareStatement(q).executeQuery();
+        rs.next();
+        primary.set(entity, rs.getInt("id"));
+
+        return result;
     }
 
     private boolean doUpdate(E entity, Field primary) throws SQLException, IllegalAccessException {
@@ -163,7 +169,7 @@ public class EntityManager<E> implements DbContext<E> {
         return connection.prepareStatement(query).execute();
     }
 
-    private boolean doDelete(Class<?> table, String where) throws Exception {
+    public boolean doDelete(Class<?> table, String where) throws Exception {
         String tableName = this.getTableName(table);
 
         String query = String.format(DELETE_QUERY,
@@ -173,12 +179,13 @@ public class EntityManager<E> implements DbContext<E> {
 
     private String getTableName(Class<?> entityClass) {
         if (entityClass.isAnnotationPresent(Entity.class)) {
-            return entityClass.getAnnotation(Entity.class).name();
+            return dataSource + "." + entityClass.getAnnotation(Entity.class).name();
         }
         throw new UnsupportedOperationException("Entity does not exist.");
     }
 
-    private void fillEntity(Class<E> table, ResultSet rs, E entity) throws SQLException, IllegalAccessException {
+    private void fillEntity(Class<E> table, ResultSet rs, E entity)
+            throws SQLException, IllegalAccessException {
         Field[] fields = table.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);

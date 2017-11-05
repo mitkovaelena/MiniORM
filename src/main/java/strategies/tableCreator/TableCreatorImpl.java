@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TableCreatorImpl implements TableCreator {
-    private final String CREATE_TABLE_QUERY = "CREATE TABLE IF NOT EXISTS `%s`(%s)";
+    private final String CREATE_TABLE_QUERY = "CREATE TABLE IF NOT EXISTS %s(%s)";
 
     private Connection connection;
     private String dataSource;
@@ -41,7 +41,7 @@ public class TableCreatorImpl implements TableCreator {
             }
         }
         String query = String.format(CREATE_TABLE_QUERY,
-                this.dataSource + "." + tableName,
+                tableName,
                 String.join(", ", columns));
 
         connection.prepareStatement(query).execute();
@@ -58,7 +58,7 @@ public class TableCreatorImpl implements TableCreator {
     @Override
     public String getTableName(Class<?> entity) {
         if (entity.isAnnotationPresent(Entity.class)) {
-            return entity.getAnnotation(Entity.class).name();
+            return dataSource + "." + entity.getAnnotation(Entity.class).name();
         }
         throw new UnsupportedOperationException("Entity does not exist.");
     }

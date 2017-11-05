@@ -15,15 +15,20 @@ import java.util.List;
 
 public class UpdateStrategy extends SchemaInitializationStrategyImpl {
     //Updates new columns/tables from the entities to an EXISTING DB
-    private final String ALTER_TABLE_QUERY = "ALTER TABLE `%s` ";
+    private final String ALTER_TABLE_QUERY = "ALTER TABLE %s ";
     private final String ADD_COLUMN_QUERY = "ADD COLUMN `%s` %s;";
 
-    public UpdateStrategy(EntityScanner entityScanner, TableCreator updater, Connection connection, String dataSource) {
+    public UpdateStrategy(EntityScanner entityScanner,
+                          TableCreator updater,
+                          Connection connection,
+                          String dataSource) {
         super(entityScanner, updater, connection, dataSource);
     }
 
     @Override
-    public void execute() throws SQLException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    public void execute() throws SQLException, ClassNotFoundException,
+            NoSuchMethodException, InstantiationException,
+            IllegalAccessException, InvocationTargetException {
         List<Class> entities = this.scanForEntities();
 
         for(Class<?> entity : entities){

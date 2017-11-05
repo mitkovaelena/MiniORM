@@ -37,7 +37,7 @@ public class Main {
                 .setPass(password)
                 .createConnection()
                 .setDataSource("orm_db")
-                .configureCreationType().set(UpdateStrategy.class)
+                .configureCreationType().set(DropCreateStrategy.class)
                 .build();
 
 
@@ -45,6 +45,15 @@ public class Main {
         User eli = new User("els", "123", 21, new Date());
         User ivo = new User("jelev", "wsedrf", 22, new Date());
 
+        em.persist(pesho);
+        em.persist(eli);
+        em.persist(ivo);
+        eli.setId(2);
+        eli.setAge(12);
+
+        em.persist(eli);
+        Object o = em.findFirst(User.class, "age > 21");
+        System.out.println();
 
     }
 }
