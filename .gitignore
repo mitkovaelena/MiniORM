@@ -2,6 +2,7 @@
 obj
 bin
 out
+target
 .idea
 *.iml
 *.pptx
@@ -9,4 +10,3 @@ out
 *.sln
 *.cs
 *.zip
-*.target
