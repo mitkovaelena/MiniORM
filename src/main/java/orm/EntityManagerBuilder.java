@@ -1,9 +1,10 @@
 package orm;
 
 import strategies.SchemaInitializationStrategy;
-import strategies.StrategyConfigurer;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class EntityManagerBuilder {
     private Connection connection;
@@ -19,7 +20,7 @@ public class EntityManagerBuilder {
         return new StrategyConfigurer(this);
     }
 
-    public EntityManager build(){
+    public EntityManager build() throws SQLException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
      return new EntityManager(this.connection, this.dataSource, this.strategy);
     }
 

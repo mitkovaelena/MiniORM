@@ -2,16 +2,18 @@ import entities.User;
 import orm.Connector;
 import orm.EntityManager;
 import orm.EntityManagerBuilder;
+import strategies.DropCreateStrategy;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Date;
 
 public class Main {
-    public static void main(String[] args) throws SQLException, IllegalAccessException, InstantiationException, IOException {
+    public static void main(String[] args) throws SQLException, IllegalAccessException, InstantiationException, IOException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
 
@@ -33,9 +35,9 @@ public class Main {
                 .setUser(username)
                 .setPass(password)
                 .createConnection()
-                .configureCreationType().setDropCreateStrategy()
-                .setDataSource("orm_db").build();
-
+                .setDataSource("orm_db")
+                .configureCreationType().set(DropCreateStrategy.class)
+                .build();
 
 
         User pesho = new User("peshoo", "abcdef", 31, new Date());

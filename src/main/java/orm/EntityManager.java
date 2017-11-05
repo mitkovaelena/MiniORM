@@ -6,6 +6,7 @@ import annotations.Id;
 import strategies.SchemaInitializationStrategy;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -16,7 +17,7 @@ public class EntityManager<E> implements DbContext<E> {
     private String dataSource;
     private SchemaInitializationStrategy strategy;
 
-    public EntityManager(Connection connection, String dataSource, SchemaInitializationStrategy strategy) {
+    public EntityManager(Connection connection, String dataSource, SchemaInitializationStrategy strategy) throws SQLException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         this.connection = connection;
         this.dataSource = dataSource;
         this.strategy = strategy;
@@ -94,29 +95,6 @@ public class EntityManager<E> implements DbContext<E> {
                 );
     }
 
-    private void doCreate(E entity) throws SQLException {
-        String tableName = this.getTableName(entity.getClass());
-        String query = "CREATE TABLE " + tableName + "(";
-        Field[] fields = entity.getClass().getDeclaredFields();
-
-        List<String> columns = new ArrayList<>();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            if (field.isAnnotationPresent(Column.class)) {
-                String column = "`" + field.getAnnotation(Column.class).name() + "`  ";
-                if (field.isAnnotationPresent(Id.class)) {
-                    column += " BIGINT PRIMARY KEY AUTO_INCREMENT";
-                } else {
-                    column += this.getDBType(field);
-                }
-                columns.add(column);
-            }
-        }
-
-        query += String.join(", ", columns) + ");";
-        connection.prepareStatement(query).execute();
-    }
-
     private void doAlter(Class entity) throws SQLException {
         String tableName = this.getTableName(entity);
         String query = "ALTER TABLE " + tableName +" ";
@@ -152,7 +130,7 @@ public class EntityManager<E> implements DbContext<E> {
         String tableName = this.getTableName(entity.getClass());
 
         if(!this.checkIfTableExists(tableName)){
-            doCreate(entity);
+           // doCreate(entity);
         }
 
         String query = "INSERT INTO " + tableName + " (";
