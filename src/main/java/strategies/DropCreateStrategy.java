@@ -1,7 +1,7 @@
 package strategies;
 
 import scanner.EntityScanner;
-import strategies.tableCreator.TableCreator;
+import strategies.tableManipulator.TableCreator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -21,7 +21,7 @@ public class DropCreateStrategy extends SchemaInitializationStrategyImpl {
         String dropQuery = String.format(DROP_DATABASE_QUERY, dataSource);
         this.connection.prepareStatement(dropQuery).executeUpdate();
 
-        String createQuery = String.format(CREATE_DATABASE_QUERY, dataSource);  //TODO: check if needed
+        String createQuery = String.format(CREATE_DATABASE_QUERY, dataSource);
         this.connection.prepareStatement(createQuery).execute();
 
         this.createTables(this.scanForEntities());

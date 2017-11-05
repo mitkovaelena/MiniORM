@@ -95,24 +95,6 @@ public class EntityManager<E> implements DbContext<E> {
                 );
     }
 
-    private void doAlter(Class entity) throws SQLException {
-        String tableName = this.getTableName(entity);
-        String query = "ALTER TABLE " + tableName +" ";
-        Field[] fields = entity.getDeclaredFields();
-
-        List<String> columns = new ArrayList<>();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            if (field.isAnnotationPresent(Column.class) && !checkIfFieldExistInDB(entity, field)) {
-                String column = "ADD COLUMN `" + field.getAnnotation(Column.class).name()
-                        + "`  " + this.getDBType(field);
-                columns.add(column);
-            }
-        }
-
-        query += String.join(", ", columns) + ";";
-        connection.prepareStatement(query).execute();
-    }
 
     private boolean doDelete(Class<?> table, String where) throws Exception {
         String tableName = this.getTableName(table);
@@ -142,6 +124,11 @@ public class EntityManager<E> implements DbContext<E> {
             field.setAccessible(true);
             if (!field.getName().equals(primary.getName()) && field.isAnnotationPresent(Column.class)) {
                 columns.add("`" + field.getAnnotation(Column.class).name() + "`");
+
+
+                if(!this.checkIfFieldExist(tableName, field)){
+                    // doAlter(entity);
+                }
 
                 Object value = field.get(entity);
                 if (field.getType() == Date.class) {
@@ -202,9 +189,8 @@ public class EntityManager<E> implements DbContext<E> {
         throw new UnsupportedOperationException("Entity does not exist.");
     }
 
-    private boolean checkIfFieldExistInDB(Class entity, Field field) throws SQLException {
+    private boolean checkIfFieldExist(String tableName, Field field) throws SQLException {
         String fieldName = field.getAnnotation(Column.class).name();
-        String tableName = this.getTableName(entity);
 
         String query = "SELECT * " +
                 "FROM information_schema.COLUMNS " +
@@ -249,21 +235,5 @@ public class EntityManager<E> implements DbContext<E> {
         } else if (field.getType() == double.class || field.getType() == Double.class) {
             field.set(entity, rs.getDouble(fieldName));
         }
-    }
-
-    private String getDBType(Field field) {
-        field.setAccessible(true);
-
-        switch (field.getType().getSimpleName()) {
-            case "int":
-                return "BIGINT";
-            case "String":
-                return "VARCHAR(50)";
-            case "Date":
-                return "TIMESTAMP";
-            case "double":
-                return "DOUBLE";
-        }
-        return null;
     }
 }

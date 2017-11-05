@@ -3,6 +3,7 @@ import orm.Connector;
 import orm.EntityManager;
 import orm.EntityManagerBuilder;
 import strategies.DropCreateStrategy;
+import strategies.UpdateStrategy;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class Main {
                 .setPass(password)
                 .createConnection()
                 .setDataSource("orm_db")
-                .configureCreationType().set(DropCreateStrategy.class)
+                .configureCreationType().set(UpdateStrategy.class)
                 .build();
 
 

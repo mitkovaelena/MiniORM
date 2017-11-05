@@ -1,4 +1,4 @@
-package strategies.tableCreator;
+package strategies.tableManipulator;
 
 import annotations.Column;
 import annotations.Entity;
@@ -10,11 +10,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DatabaseTableCreator implements TableCreator {
+public class TableCreatorImpl implements TableCreator {
     private Connection connection;
     private String dataSource;
 
-    public DatabaseTableCreator(Connection connection, String dataSource) {
+    public TableCreatorImpl(Connection connection, String dataSource) {
         this.connection = connection;
         this.dataSource = dataSource;
     }
@@ -28,8 +28,9 @@ public class DatabaseTableCreator implements TableCreator {
         List<String> columns = new ArrayList<>();
         for (Field field : fields) {
             field.setAccessible(true);
-            if (field.isAnnotationPresent(Column.class)) {
-                String column = "`" + field.getAnnotation(Column.class).name() + "`  ";
+            String fieldName = this.getFieldName(field);
+            if (fieldName!= null) {
+                String column = "`" + fieldName + "`  ";
                 if (field.isAnnotationPresent(Id.class)) {
                     column += " BIGINT PRIMARY KEY AUTO_INCREMENT";
                 } else {
@@ -43,21 +44,12 @@ public class DatabaseTableCreator implements TableCreator {
         connection.prepareStatement(query).execute();
     }
 
-
     @Override
     public String getFieldName(Field field) {
-        String fieldName = "";
-
         if (field.isAnnotationPresent(Column.class)) {
-            Column columnAnnotation = field.getAnnotation(Column.class);
-            fieldName = columnAnnotation.name();
+            return field.getAnnotation(Column.class).name();
         }
-
-        if (fieldName.equals("")) {
-            fieldName = field.getName();
-        }
-
-        return fieldName;
+        return null;
     }
 
     @Override

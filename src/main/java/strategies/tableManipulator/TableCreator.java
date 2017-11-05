@@ -1,4 +1,4 @@
-package strategies.tableCreator;
+package strategies.tableManipulator;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;

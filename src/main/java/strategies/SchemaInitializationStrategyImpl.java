@@ -1,7 +1,7 @@
 package strategies;
 
 import scanner.EntityScanner;
-import strategies.tableCreator.TableCreator;
+import strategies.tableManipulator.TableCreator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
@@ -24,20 +24,4 @@ public abstract class SchemaInitializationStrategyImpl implements SchemaInitiali
         return this.entityScanner
                 .getAllEntities(System.getProperty("user.dir"));
    }
-
-    public void setEntityScanner(EntityScanner entityScanner) {
-        this.entityScanner = entityScanner;
-    }
-
-    public void setCreator(TableCreator creator) {
-        this.creator = creator;
-    }
-
-    public void setConnection(Connection connection) {
-        this.connection = connection;
-    }
-
-    public void setDataSource(String dataSource) {
-        this.dataSource = dataSource;
-    }
 }

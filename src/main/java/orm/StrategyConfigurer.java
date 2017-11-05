@@ -1,8 +1,7 @@
 package orm;
 
 import scanner.EntityScanner;
-import strategies.tableCreator.DatabaseTableCreator;
-import strategies.DropCreateStrategy;
+import strategies.tableManipulator.TableCreatorImpl;
 import strategies.SchemaInitializationStrategy;
 
 import java.lang.reflect.Constructor;
@@ -22,7 +21,7 @@ public class StrategyConfigurer {
         constructor.setAccessible(true);
         SchemaInitializationStrategy strategy = constructor.newInstance(
                 new EntityScanner(),
-                new DatabaseTableCreator(this.builder.getConnection(), this.builder.getDataSource()),
+                new TableCreatorImpl(this.builder.getConnection(), this.builder.getDataSource()),
                 this.builder.getConnection(),
                 this.builder.getDataSource());
 
